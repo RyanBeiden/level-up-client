@@ -3,7 +3,7 @@ import { GameContext } from "./GameProvider.js"
 
 
 export const GameForm = props => {
-    const { createGame, getGameTypes, gameTypes } = useContext(GameContext)
+    const { createGame, editGame, getGameTypes, gameTypes, getSingleGame } = useContext(GameContext)
 
     /*
         Since the input fields are bound to the values of
@@ -25,6 +25,20 @@ export const GameForm = props => {
     useEffect(() => {
         getGameTypes()
     }, [])
+
+    useEffect(() => {
+        if("gameId" in props.match.params) {
+            getSingleGame(props.match.params.gameId).then(game => {
+                setCurrentGame({
+                    skillLevel: game.skill_level,
+                    numberOfPlayers: game.number_of_players,
+                    title: game.title,
+                    maker: game.maker,
+                    gameTypeId: game.game_type
+                })
+            })
+        }
+    }, [props.match.params.gameId])
 
     /*
         Update the `currentGame` state variable every time
@@ -78,6 +92,7 @@ export const GameForm = props => {
             <fieldset>
                 <label htmlFor="gametypes">Choose a gametype: </label>
                 <select name="gameTypeId" onChange={handleControlledInputChange}>
+                    <option value="0">Select a type</option>
                     {
                         gameTypes.map(gameType => {
                             return <option value={gameType.id} key={gameType.id}>{gameType.label}</option>
@@ -85,23 +100,44 @@ export const GameForm = props => {
                     }
                 </select>
             </fieldset>
-            <button type="submit"
-                onClick={evt => {
-                    // Prevent form from being submitted
-                    evt.preventDefault()
-
-                    const game = {
-                        maker: currentGame.maker,
-                        title: currentGame.title,
-                        numberOfPlayers: parseInt(currentGame.numberOfPlayers),
-                        skillLevel: parseInt(currentGame.skillLevel),
-                        gameTypeId: parseInt(currentGame.gameTypeId)
-                    }
-
-                    // Send POST request to your API
-                    createGame(game)
-                }}
-                className="btn btn-primary" style={{ backgroundColor: '#2ecc71', color: '#fff' }}>Create</button>
+            {
+                ("gameId" in props.match.params)
+                    ? <button
+                        onClick={evt => {
+                            // Prevent form from being submitted
+                            evt.preventDefault()
+        
+                            const game = {
+                                id: props.match.params.gameId,
+                                maker: currentGame.maker,
+                                title: currentGame.title,
+                                numberOfPlayers: parseInt(currentGame.numberOfPlayers),
+                                skillLevel: parseInt(currentGame.skillLevel),
+                                gameTypeId: parseInt(currentGame.gameTypeId)
+                            }
+        
+                            // Send POST request to your API
+                            editGame(game).then(() => props.history.push('/games'))
+                        }}
+                        className="btn btn-primary" style={{ backgroundColor: '#3844ec', color: '#fff' }}>Edit</button>
+                    : <button type="submit"
+                        onClick={evt => {
+                            // Prevent form from being submitted
+                            evt.preventDefault()
+        
+                            const game = {
+                                maker: currentGame.maker,
+                                title: currentGame.title,
+                                numberOfPlayers: parseInt(currentGame.numberOfPlayers),
+                                skillLevel: parseInt(currentGame.skillLevel),
+                                gameTypeId: parseInt(currentGame.gameTypeId)
+                            }
+        
+                            // Send POST request to your API
+                            createGame(game)
+                        }}
+                        className="btn btn-primary" style={{ backgroundColor: '#2ecc71', color: '#fff' }}>Create</button>
+            }
         </form>
     )
 }
